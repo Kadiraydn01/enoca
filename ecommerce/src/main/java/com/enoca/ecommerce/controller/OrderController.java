@@ -19,12 +19,19 @@ import java.util.List;
 @RestController
 @RequestMapping("/order")
 public class OrderController {
+
+    private final OrderService orderService;
+
+    private final CustomerService customerService;
+
+    private final ProductService productService;
+
     @Autowired
-    private OrderService orderService;
-    @Autowired
-    private CustomerService customerService;
-    @Autowired
-    private ProductService productService;
+    public OrderController(OrderService orderService, CustomerService customerService, ProductService productService) {
+        this.orderService = orderService;
+        this.customerService = customerService;
+        this.productService = productService;
+    }
 
     @PostMapping("/add")
     public ResponseEntity<OrderResponse> saveOrder(@RequestBody Order order) {

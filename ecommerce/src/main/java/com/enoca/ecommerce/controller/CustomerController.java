@@ -4,6 +4,7 @@ import com.enoca.ecommerce.entity.Customer;
 import com.enoca.ecommerce.service.CustomerService;
 import com.enoca.ecommerce.util.DtoConverter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -60,8 +61,8 @@ public class CustomerController {
 
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCustomer(@PathVariable long id) { 
+    public ResponseEntity<String> deleteCustomer(@PathVariable long id) {
         customerService.deleteCustomer(id);
-        return ResponseEntity.noContent().build();
+        return new ResponseEntity<>("Customer deleted successfully", HttpStatus.OK);
     }
 }

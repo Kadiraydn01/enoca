@@ -17,14 +17,24 @@ public class Product {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private long id;
+
+
     @Column(name = "product_name")
     private String name;
+
+
     @Column(name = "product_stock")
     private long stock;
+
+
     @Column(name = "product_price")
     private double price;
+
+
     @Column(name = "product_description")
     private String description;
+
+
     @Column(name = "product_image")
     private String image;
 

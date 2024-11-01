@@ -17,12 +17,19 @@ import java.util.List;
 @RestController
 @RequestMapping("/cart")
 public class CartController {
+
+    private final CartService cartService;
+
+    private final CustomerService customerService;
+
+    private final ProductService productService;
+
     @Autowired
-    private CartService cartService;
-    @Autowired
-    private CustomerService customerService;
-    @Autowired
-    private ProductService productService;
+    public CartController(CartService cartService, CustomerService customerService, ProductService productService) {
+        this.cartService = cartService;
+        this.customerService = customerService;
+        this.productService = productService;
+    }
 
 
 
