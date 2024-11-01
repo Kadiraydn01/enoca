@@ -12,7 +12,7 @@ public class DtoConverter {
         response.setId(cart.getId());
         response.setProducts(cart.getProducts());
         response.setQuantity(cart.getQuantity());
-        response.setTotalPrice(cart.getTotalPrice());
+
         return response;
     }
     public static CustomerResponse convertToCustomerResponse(Customer customer) {

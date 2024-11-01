@@ -25,14 +25,12 @@ public class Order {
 
     @ManyToOne(cascade ={CascadeType.DETACH, CascadeType.MERGE,CascadeType.PERSIST,CascadeType.REFRESH})
     @JoinColumn(name = "customer_id")
-
     private Customer customer;
 
 
     @OneToMany(mappedBy = "order", cascade = {CascadeType.DETACH, CascadeType.MERGE,CascadeType.PERSIST,CascadeType.REFRESH})
     private List<OrderDetail> orderDetails;
 
-    @Column(name = "total_order_price")
-    private double totalPrice;
+
 
 }

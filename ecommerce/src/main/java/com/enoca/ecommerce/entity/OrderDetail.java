@@ -1,5 +1,6 @@
 package com.enoca.ecommerce.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -17,6 +18,7 @@ public class OrderDetail {
 
     @ManyToOne
     @JoinColumn(name = "order_id")
+    @JsonBackReference
     private Order order;
 
     @ManyToOne
@@ -25,8 +27,8 @@ public class OrderDetail {
 
     @ManyToOne
     @JoinColumn(name = "cart_id")
+    @JsonBackReference
     private Cart cart;
-
 
     @Column(name = "quantity")
     private int quantity;
@@ -34,5 +36,7 @@ public class OrderDetail {
     @Column(name = "total_price")
     private double totalPrice;
 
-
+    public double getTotalPrice() {
+        return product.getPrice() * quantity;
+    }
 }
