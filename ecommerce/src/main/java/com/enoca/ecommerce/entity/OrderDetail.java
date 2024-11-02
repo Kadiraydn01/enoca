@@ -18,7 +18,7 @@ public class OrderDetail {
 
     @ManyToOne
     @JoinColumn(name = "order_id")
-    @JsonBackReference
+
     private Order order;
 
     @ManyToOne
@@ -27,7 +27,6 @@ public class OrderDetail {
 
     @ManyToOne
     @JoinColumn(name = "cart_id")
-    @JsonBackReference
     private Cart cart;
 
     @Column(name = "quantity")

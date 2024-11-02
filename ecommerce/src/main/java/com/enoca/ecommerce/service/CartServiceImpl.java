@@ -6,6 +6,7 @@
     import com.enoca.ecommerce.entity.Product;
     import com.enoca.ecommerce.repository.CartRepository;
     import com.enoca.ecommerce.repository.ProductRepository;
+    import jakarta.transaction.Transactional;
     import org.springframework.beans.factory.annotation.Autowired;
     import org.springframework.stereotype.Service;
 
@@ -69,63 +70,216 @@
         }
 
         @Override
+        @Transactional
         public Cart addProductToCart(Product product, int quantity, Cart cart) {
             product = productRepository.findById(product.getId()).orElse(null);
+
             if (product != null) {
-                for (int i = 0; i < quantity; i++) {
-                    cart.getProducts().add(product);
+                // Sepetteki ürünleri kontrol et ve var olanı güncelle veya yeni ürün ekle
+                Product existingProductInCart = null;
+                for (Product p : cart.getProducts()) {
+                    if (p.getId() == product.getId()) {
+                        existingProductInCart = p;
+                        break;
+                    }
                 }
 
+                if (existingProductInCart != null) {
+                    int newQuantity = existingProductInCart.getQuantity() + quantity;
+                    if (newQuantity > product.getStock()) {
+                        throw new IllegalArgumentException("Requested quantity exceeds available stock.");
+                    }
+                    existingProductInCart.setQuantity(newQuantity);
+                } else {
+                    Product newProduct = new Product();
+                    newProduct.setId(product.getId());
+                    newProduct.setDescription(product.getDescription());
+                    newProduct.setImage(product.getImage());
+                    newProduct.setName(product.getName());
+                    newProduct.setPrice(product.getPrice());
+                    newProduct.setStock(product.getStock() - quantity);
+                    newProduct.setQuantity(quantity);
+                    newProduct.setCart(cart);
+                    if(newProduct.getStock() < 0){
+                        throw new IllegalArgumentException("Requested quantity exceeds available stock.");
+                    }
+                    cart.getProducts().add(newProduct);
+                }
+
+                product.setStock(product.getStock() - quantity);
+
+                double totalPrice = cart.getProducts().stream()
+                        .mapToDouble(p -> p.getPrice() * p.getQuantity())
+                        .sum();
+                cart.setTotalPrice(totalPrice);
+
+                productRepository.save(product);
                 return cartRepository.save(cart);
             }
+
             return null;
         }
+
+
+
 
         @Override
+        @Transactional
         public Cart removeProductFromCart(Product product, int quantity, Cart cart) {
+            // Ürünü veritabanından bul
             product = productRepository.findById(product.getId()).orElse(null);
             if (product != null) {
-                for (int i = 0; i < quantity; i++) {
-                    cart.getProducts().remove(product);
+                // Sepetteki ürünü bul
+                Product existingProductInCart = null;
+                for (Product p : cart.getProducts()) {
+                    if (p.getId().equals(product.getId())) {
+                        existingProductInCart = p;
+                        break;
+                    }
                 }
 
-                return cartRepository.save(cart);
+                if (existingProductInCart != null) {
+                    // Mevcut ürün miktarı
+                    int currentQuantity = existingProductInCart.getQuantity();
+
+                    // Çıkarılacak miktar mevcut miktardan fazla mı kontrol et
+                    if (quantity > currentQuantity) {
+                        throw new IllegalArgumentException("Cannot remove more than available quantity in cart.");
+                    }
+
+                    // Yeni miktarı hesapla
+                    int newQuantity = currentQuantity - quantity;
+
+                    // Sepetteki ürün miktarı sıfırsa ürünü kaldır
+                    if (newQuantity == 0) {
+                        cart.getProducts().remove(existingProductInCart);
+                        existingProductInCart.setCart(null); // Customer cart değerini null yap
+                    } else {
+                        // Miktarı güncelle
+                        existingProductInCart.setQuantity(newQuantity);
+                    }
+
+                    // Stok miktarını artır
+                    product.setStock(product.getStock() + quantity);
+
+                    // Toplam fiyatı güncelle
+                    double totalPrice = cart.getProducts().stream()
+                            .mapToDouble(p -> p.getPrice() * p.getQuantity())
+                            .sum();
+                    cart.setTotalPrice(totalPrice);
+
+                    // Product içindeki quantity miktarını güncelle
+                    existingProductInCart.setQuantity(newQuantity); // Bu satırı ekleyin
+
+                    // Güncellemeleri kaydet
+                    productRepository.save(product); // Stok güncelleme
+                    if (newQuantity > 0) {
+                        productRepository.save(existingProductInCart); // Sadece miktar sıfır değilse mevcut ürünü güncelle
+                    }
+                    return cartRepository.save(cart);
+                }
             }
             return null;
         }
 
+
+        @Override
+        @Transactional
         public Cart increaseProductQuantity(Product product, int quantity, Cart cart) {
+            // Sepette ürünü bul
+            Product existingProductInCart = null;
+            for (Product p : cart.getProducts()) {
+                if (p.getId().equals(product.getId())) {
+                    existingProductInCart = p;
+                    break;
+                }
+            }
 
-            boolean productExistsInCart = cart.getProducts().stream()
-                .anyMatch(p -> p.getId() == product.getId());
+            if (existingProductInCart != null) {
+                // Ürün zaten sepette mevcut, miktarı artır
+                int newQuantity = existingProductInCart.getQuantity() + quantity;
 
-            if (!productExistsInCart) {
+                // Stok kontrolü
+                if (quantity > product.getStock()) {
+                    throw new IllegalArgumentException("Requested quantity exceeds available stock.");
+                }
 
+                existingProductInCart.setQuantity(newQuantity);
+                existingProductInCart.setStock(product.getStock() - quantity);
+            } else {
+                // Ürün sepette yok, sepete ekle
+                product.setQuantity(quantity); // İlk miktarı ayarla
                 cart.getProducts().add(product);
             }
 
+            // Toplam fiyatı güncelle
+            double totalPrice = cart.getProducts().stream()
+                    .mapToDouble(p -> p.getPrice() * p.getQuantity())
+                    .sum();
+            cart.setTotalPrice(totalPrice);
 
-            cart.setQuantity(cart.getQuantity() + quantity);
-
-
-
+            // Güncellemeleri kaydet
             return cartRepository.save(cart);
         }
 
+        @Override
+        @Transactional
         public Cart decreaseProductQuantity(Product product, int quantity, Cart cart) {
 
-            boolean productExistsInCart = cart.getProducts().stream()
-                    .anyMatch(p -> p.getId() == product.getId());
 
-            if (productExistsInCart) {
-                cart.getProducts().remove(product);
+            // Sepette ürünü buluyoruz
+            Product existingProductInCart = null;
+            for (Product p : cart.getProducts()) {
+                if (p.getId().equals(product.getId())) {
+                    existingProductInCart = p;
+                    break;
+                }
             }
 
-            cart.setQuantity(Math.max(0,cart.getQuantity() - quantity) );
+            if (existingProductInCart != null) {
 
 
-            return cartRepository.save(cart);
+                // Mevcut ürün miktarını kontrol ediyoruz
+
+                int currentQuantity = existingProductInCart.getQuantity();
+
+                // Çıkarılacak miktar mevcut miktardan fazla mı onu kontrol ediyoruz.
+
+                if (quantity > currentQuantity) {
+                    throw new IllegalArgumentException("Cannot remove more than available quantity in cart.");
+                }
+
+                // Yeni miktarı hesapla
+                int newQuantity = currentQuantity - quantity;
+
+                // Stok miktarını artır
+                product.setStock(product.getStock() + quantity);
+                product.setQuantity(newQuantity);
+
+                // Sepetteki ürün miktarı sıfırsa ürünü kaldır
+                if (newQuantity <= 0) {
+                    cart.getProducts().remove(existingProductInCart);
+                    existingProductInCart.setCart(null); // Ürün sepet referansını kaldır
+                } else {
+                    // Miktarı güncelle
+                    existingProductInCart.setQuantity(newQuantity);
+                }
+
+                // Toplam fiyatı güncelle
+                double totalPrice = cart.getProducts().stream()
+                        .mapToDouble(p -> p.getPrice() * p.getQuantity())
+                        .sum();
+                cart.setTotalPrice(totalPrice);
+
+                // Güncellemeleri kaydet
+                productRepository.save(product); // Ürünü güncelle
+                return cartRepository.save(cart); // Sepeti güncelle
+            }
+
+            return null; // Ürün sepet bulunamadıysa null döner
         }
+
+
 
         @Override
         public Cart cartToOrder(Cart cart, Order order) {

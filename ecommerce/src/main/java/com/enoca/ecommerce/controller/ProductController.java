@@ -1,8 +1,6 @@
 package com.enoca.ecommerce.controller;
-import com.enoca.ecommerce.dto.ProductResponse;
 import com.enoca.ecommerce.entity.Product;
 import com.enoca.ecommerce.service.ProductService;
-import com.enoca.ecommerce.util.DtoConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,12 +16,11 @@ public class ProductController {
     private ProductService productService;
 
     @PostMapping("/add")
-    public ResponseEntity<ProductResponse> addProduct(@RequestBody Product product) {
+    public ResponseEntity<Product> addProduct(@RequestBody Product product) {
 
         Product createdProduct = productService.addProduct(product);
         if (createdProduct != null) {
-            ProductResponse response = DtoConverter.convertToProductResponse(createdProduct);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(createdProduct);
         } else {
             return ResponseEntity.badRequest().build();
         }
@@ -31,11 +28,10 @@ public class ProductController {
     }
 
     @GetMapping("/list")
-    public ResponseEntity<List<ProductResponse  >> listProducts() {
+    public ResponseEntity<List<Product>> listProducts() {
         List<Product> products = productService.listProducts();
         if (products != null) {
-            List<ProductResponse> responses = DtoConverter.convertToProductResponseList(products);
-            return ResponseEntity.ok(responses);
+            return ResponseEntity.ok(products);
         } else {
             return ResponseEntity.notFound().build();
         }
@@ -43,33 +39,30 @@ public class ProductController {
 
     @GetMapping("/list/{id}")
     @CrossOrigin(origins = "*")
-    public ResponseEntity<ProductResponse> getProduct(@PathVariable Long id) {
+    public ResponseEntity<Product> getProduct(@PathVariable Long id) {
         Product product = productService.getProduct(id);
         if (product != null) {
-            ProductResponse response = DtoConverter.convertToProductResponse(product);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(product);
         } else {
             return ResponseEntity.notFound().build();
         }
     }
 
     @PutMapping("/update")
-    public ResponseEntity<ProductResponse> updateProduct(@RequestBody Product product) {
+    public ResponseEntity<Product> updateProduct(@RequestBody Product product) {
         Product updatedProduct = productService.updateProduct(product);
         if (updatedProduct != null) {
-            ProductResponse response = DtoConverter.convertToProductResponse(updatedProduct);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(updatedProduct);
         } else {
             return ResponseEntity.notFound().build();
         }
     }
 
     @DeleteMapping("{id}")
-    public ResponseEntity<ProductResponse> deleteProduct(@PathVariable Long id) {
+    public ResponseEntity<Product> deleteProduct(@PathVariable Long id) {
         Product deletedProduct = productService.deleteProduct(id);
         if (deletedProduct != null) {
-            ProductResponse response = DtoConverter.convertToProductResponse(deletedProduct);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(deletedProduct);
         } else {
             return ResponseEntity.notFound().build();
         }

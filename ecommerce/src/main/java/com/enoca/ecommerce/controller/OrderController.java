@@ -1,7 +1,6 @@
 package com.enoca.ecommerce.controller;
 
-import com.enoca.ecommerce.dto.OrderDetailResponse;
-import com.enoca.ecommerce.dto.OrderResponse;
+
 import com.enoca.ecommerce.entity.Customer;
 import com.enoca.ecommerce.entity.Order;
 import com.enoca.ecommerce.entity.OrderDetail;
@@ -9,7 +8,6 @@ import com.enoca.ecommerce.entity.Product;
 import com.enoca.ecommerce.service.CustomerService;
 import com.enoca.ecommerce.service.OrderService;
 import com.enoca.ecommerce.service.ProductService;
-import com.enoca.ecommerce.util.DtoConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -34,7 +32,7 @@ public class OrderController {
     }
 
     @PostMapping("/add")
-    public ResponseEntity<OrderResponse> saveOrder(@RequestBody Order order) {
+    public ResponseEntity<Order> saveOrder(@RequestBody Order order) {
         Customer customer = customerService.getCustomer(order.getCustomer().getId());
         if (customer == null) {
             return ResponseEntity.badRequest().build();
@@ -54,20 +52,17 @@ public class OrderController {
 
         Order createdOrder = orderService.save(order);
         if (createdOrder != null) {
-            OrderResponse response = DtoConverter.convertToOrderResponse(createdOrder);
-
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(createdOrder);
         } else {
             return ResponseEntity.badRequest().build();
         }
     }
 
     @GetMapping("/list")
-    public ResponseEntity<List<OrderResponse>> findAll() {
+    public ResponseEntity<List<Order>> findAll() {
           List<Order> orders = orderService.findAll();
             if (orders != null) {
-                List<OrderResponse> responses = DtoConverter.convertToOrderResponseList(orders);
-                return ResponseEntity.ok(responses);
+                return ResponseEntity.ok(orders);
             } else {
                 return ResponseEntity.notFound().build();
             }   
@@ -75,12 +70,11 @@ public class OrderController {
 
 
     @GetMapping("/findById/{id}")
-    public ResponseEntity<OrderResponse> findById(@PathVariable Long id) {
+    public ResponseEntity<Order> findById(@PathVariable Long id) {
 
         Order order = orderService.findById(id);
         if (order != null) {
-            OrderResponse response = DtoConverter.convertToOrderResponse(order);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(order);
         } else {
             return ResponseEntity.notFound().build();
         }
@@ -95,11 +89,10 @@ public class OrderController {
 
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<OrderResponse> update(@PathVariable Long id, @RequestBody Order order) {
+    public ResponseEntity<Order> update(@PathVariable Long id, @RequestBody Order order) {
         Order updatedOrder = orderService.update(order);  
         if (updatedOrder != null) {
-            OrderResponse response = DtoConverter.convertToOrderResponse(updatedOrder);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(updatedOrder);
         } else {
             return ResponseEntity.notFound().build();
         }
@@ -107,11 +100,10 @@ public class OrderController {
 
 
     @GetMapping("/findByUserId/{userId}")
-    public ResponseEntity<List<OrderResponse>> findByUserId(@PathVariable Long userId) {
+    public ResponseEntity<List<Order>> findByUserId(@PathVariable Long userId) {
         List<Order> orders = orderService.findByUserId(userId);
         if (orders != null) {
-            List<OrderResponse> responses = DtoConverter.convertToOrderResponseList(orders);
-            return ResponseEntity.ok(responses);
+            return ResponseEntity.ok(orders);
         } else {
             return ResponseEntity.notFound().build();
         }

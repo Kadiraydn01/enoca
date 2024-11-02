@@ -1,5 +1,7 @@
 package com.enoca.ecommerce.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -16,7 +18,7 @@ public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private long id;
+    private Long id;
 
 
     @Column(name = "product_name")
@@ -34,11 +36,12 @@ public class Product {
     @Column(name = "product_description")
     private String description;
 
+    @Column(name = "quantity")
+    private Integer quantity = 0;
+
 
     @Column(name = "product_image")
     private String image;
-
-
 
 
     @ManyToOne(cascade ={CascadeType.DETACH, CascadeType.MERGE,CascadeType.PERSIST,CascadeType.REFRESH})
@@ -47,6 +50,7 @@ public class Product {
 
     @ManyToOne(cascade ={CascadeType.DETACH, CascadeType.MERGE,CascadeType.PERSIST,CascadeType.REFRESH})
     @JoinColumn(name = "costumer_cart")
+    @JsonBackReference
     private Cart cart;
 
 }

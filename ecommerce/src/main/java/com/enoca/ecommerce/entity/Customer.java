@@ -29,6 +29,7 @@ public class Customer {
     @JsonManagedReference
     private Cart cart;
 
+
     @OneToMany(cascade =CascadeType.ALL, mappedBy = "customer")
     private List<Order> orders;
    
