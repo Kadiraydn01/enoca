@@ -31,9 +31,6 @@ public class Order {
     private Customer customer;
 
 
-    @OneToMany(mappedBy = "order", cascade = {CascadeType.DETACH, CascadeType.MERGE,CascadeType.PERSIST,CascadeType.REFRESH})
-    private List<OrderDetail> orderDetails;
-
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
     @JsonManagedReference
     private List<OrderDetailHistory> orderDetailHistories;
