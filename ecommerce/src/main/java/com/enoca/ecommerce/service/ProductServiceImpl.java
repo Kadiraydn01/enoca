@@ -2,6 +2,7 @@ package com.enoca.ecommerce.service;
 
 import com.enoca.ecommerce.entity.Product;
 import com.enoca.ecommerce.repository.ProductRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -32,8 +33,27 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public Product updateProduct(Product product) {
-        return productRepository.save(product);
+    public Product updateProduct(Long id, Product updatedProduct) {
+        Product existingProduct = productRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Product not found"));
+
+        if (updatedProduct.getName() != null) {
+            existingProduct.setName(updatedProduct.getName());
+        }
+        if (updatedProduct.getDescription() != null) {
+            existingProduct.setDescription(updatedProduct.getDescription());
+        }
+        if (updatedProduct.getPrice() != null) {
+            existingProduct.setPrice(updatedProduct.getPrice());
+        }
+        if (updatedProduct.getStock() != null) {
+            existingProduct.setStock(updatedProduct.getStock());
+        }
+        if (updatedProduct.getImage() != null) {
+            existingProduct.setImage(updatedProduct.getImage());
+        }
+
+        return productRepository.save(existingProduct);
     }
 
     @Override

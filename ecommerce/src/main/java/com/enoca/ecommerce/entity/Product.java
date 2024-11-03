@@ -26,11 +26,11 @@ public class Product {
 
 
     @Column(name = "product_stock")
-    private long stock;
+    private Long stock;
 
 
     @Column(name = "product_price")
-    private double price;
+    private Double price;
 
 
     @Column(name = "product_description")
@@ -43,10 +43,6 @@ public class Product {
     @Column(name = "product_image")
     private String image;
 
-
-    @ManyToOne(cascade ={CascadeType.DETACH, CascadeType.MERGE,CascadeType.PERSIST,CascadeType.REFRESH})
-    @JoinColumn(name = "order_id")
-    private Order order;
 
     @ManyToOne(cascade ={CascadeType.DETACH, CascadeType.MERGE,CascadeType.PERSIST,CascadeType.REFRESH})
     @JoinColumn(name = "costumer_cart")

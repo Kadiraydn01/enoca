@@ -37,7 +37,7 @@ public class ProductController {
         }
     }
 
-    @GetMapping("/list/{id}")
+    @GetMapping("/{id}")
     @CrossOrigin(origins = "*")
     public ResponseEntity<Product> getProduct(@PathVariable Long id) {
         Product product = productService.getProduct(id);
@@ -48,15 +48,12 @@ public class ProductController {
         }
     }
 
-    @PutMapping("/update")
-    public ResponseEntity<Product> updateProduct(@RequestBody Product product) {
-        Product updatedProduct = productService.updateProduct(product);
-        if (updatedProduct != null) {
-            return ResponseEntity.ok(updatedProduct);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    @PutMapping("/{id}")
+    public ResponseEntity<Product> updateProduct(@PathVariable Long id, @RequestBody Product product) {
+        Product updatedProduct = productService.updateProduct(id, product);
+        return ResponseEntity.ok(updatedProduct);
     }
+
 
     @DeleteMapping("{id}")
     public ResponseEntity<Product> deleteProduct(@PathVariable Long id) {

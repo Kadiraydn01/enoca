@@ -69,17 +69,40 @@
         public Cart clearCart(long id) {
             Cart cart = getCart(id);
             if (cart != null) {
+                // Break the association and adjust quantity and stock for each product
+                cart.getProducts().forEach(product -> {
+                    // Increase stock by the quantity in the cart
+                    int quantityInCart = product.getQuantity();
+                    product.setStock(product.getStock() + quantityInCart);
+
+                    // Set quantity to 0 for this product in the cart
+                    product.setQuantity(0);
+
+                    // Remove the association with the cart and save the product
+                    product.setCart(null);
+                    productRepository.save(product);
+                });
+
+                // Clear the cart's products list and reset cart totals
                 cart.getProducts().clear();
                 cart.setTotalPrice(0.0);
+                cart.setQuantity(0);
+
+                // Save the updated cart
                 cartRepository.save(cart);
             }
             return cart;
         }
 
+
         @Override
         @Transactional
         public Cart addProductToCart(Product product, int quantity, Cart cart) {
             product = productRepository.findById(product.getId()).orElse(null);
+
+            if(quantity <= 0){
+                throw new IllegalArgumentException("Quantity must be greater than 0.");
+            }
 
             if (product != null) {
                 Product existingProductInCart = null;
@@ -133,6 +156,9 @@
         @Override
         @Transactional
         public Cart removeProductFromCart(Product product, int quantity, Cart cart) {
+                if(quantity <= 0){
+                    throw new IllegalArgumentException("Quantity must be greater than 0.");
+                }
             product = productRepository.findById(product.getId()).orElse(null);
             if (product != null) {
                 Product existingProductInCart = null;
@@ -142,7 +168,6 @@
                         break;
                     }
                 }
-
                 if (existingProductInCart != null) {
 
                     int currentQuantity = existingProductInCart.getQuantity();
@@ -286,20 +311,27 @@
             order.setOrderDetailHistories(orderDetailHistories);
             order.setTotalPrice(cart.getTotalPrice());
 
-
             orderRepository.save(order);
 
+            // Make a copy of products in the cart to update quantities later
+            List<Product> productsToUpdate = new ArrayList<>(cart.getProducts());
 
+            // Clear cart details after order creation
             cart.getProducts().forEach(product -> product.setCart(null));
             cart.getProducts().clear();
-
-
             cart.setTotalPrice(0.0);
             cart.setQuantity(0);
 
             cartRepository.save(cart);
 
+            // Set each product's quantity to 0 after clearing the cart
+            productsToUpdate.forEach(product -> {
+                product.setQuantity(0);
+                productRepository.save(product);
+            });
+
             return order;
         }
+
 
     }
