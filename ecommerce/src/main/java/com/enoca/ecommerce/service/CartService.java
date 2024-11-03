@@ -11,11 +11,11 @@ public interface CartService {
     Cart createCart(Cart cart, Customer customer);
     Cart getCart(long id);
     Cart updateCart(Cart cart);
-    Cart deleteCart(long id);
+    Cart clearCart(long id);
     Cart addProductToCart(Product product, int quantity, Cart cart);
     Cart removeProductFromCart(Product product, int quantity, Cart cart); 
     Cart increaseProductQuantity(Product product, int quantity, Cart cart); 
     Cart decreaseProductQuantity(Product product,int quantity, Cart cart);
-    Cart cartToOrder(Cart cart , Order order);
+    Order cartToOrder(Cart cart , String address);
 
 }

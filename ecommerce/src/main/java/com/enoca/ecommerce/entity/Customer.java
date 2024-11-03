@@ -31,6 +31,7 @@ public class Customer {
 
 
     @OneToMany(cascade =CascadeType.ALL, mappedBy = "customer")
+    @JsonManagedReference
     private List<Order> orders;
    
 

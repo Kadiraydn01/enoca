@@ -1,10 +1,8 @@
     package com.enoca.ecommerce.service;
 
-    import com.enoca.ecommerce.entity.Cart;
-    import com.enoca.ecommerce.entity.Customer;
-    import com.enoca.ecommerce.entity.Order;
-    import com.enoca.ecommerce.entity.Product;
+    import com.enoca.ecommerce.entity.*;
     import com.enoca.ecommerce.repository.CartRepository;
+    import com.enoca.ecommerce.repository.OrderRepository;
     import com.enoca.ecommerce.repository.ProductRepository;
     import jakarta.transaction.Transactional;
     import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +10,7 @@
 
     import java.util.ArrayList;
     import java.util.List;
+    import java.util.stream.Collectors;
 
     @Service
     public class CartServiceImpl implements CartService {
@@ -22,11 +21,17 @@
 
         private final ProductService productService;
 
+        private final OrderRepository orderRepository;
+
         @Autowired
-        public CartServiceImpl(CartRepository cartRepository, ProductRepository productRepository, ProductService productService) {
+        public CartServiceImpl(CartRepository cartRepository,
+                               ProductRepository productRepository,
+                               ProductService productService,
+                               OrderRepository orderRepository) {
             this.cartRepository = cartRepository;
             this.productRepository = productRepository;
             this.productService = productService;
+            this.orderRepository = orderRepository;
         }
 
         @Override
@@ -61,10 +66,12 @@
         }
 
         @Override
-        public Cart deleteCart(long id) {
+        public Cart clearCart(long id) {
             Cart cart = getCart(id);
             if (cart != null) {
-                cartRepository.delete(cart);
+                cart.getProducts().clear();
+                cart.setTotalPrice(0.0);
+                cartRepository.save(cart);
             }
             return cart;
         }
@@ -75,7 +82,6 @@
             product = productRepository.findById(product.getId()).orElse(null);
 
             if (product != null) {
-                // Sepetteki ürünleri kontrol et ve var olanı güncelle veya yeni ürün ekle
                 Product existingProductInCart = null;
                 for (Product p : cart.getProducts()) {
                     if (p.getId() == product.getId()) {
@@ -112,6 +118,7 @@
                         .mapToDouble(p -> p.getPrice() * p.getQuantity())
                         .sum();
                 cart.setTotalPrice(totalPrice);
+                cart.setQuantity(cart.getQuantity() + quantity);
 
                 productRepository.save(product);
                 return cartRepository.save(cart);
@@ -126,10 +133,8 @@
         @Override
         @Transactional
         public Cart removeProductFromCart(Product product, int quantity, Cart cart) {
-            // Ürünü veritabanından bul
             product = productRepository.findById(product.getId()).orElse(null);
             if (product != null) {
-                // Sepetteki ürünü bul
                 Product existingProductInCart = null;
                 for (Product p : cart.getProducts()) {
                     if (p.getId().equals(product.getId())) {
@@ -139,42 +144,35 @@
                 }
 
                 if (existingProductInCart != null) {
-                    // Mevcut ürün miktarı
+
                     int currentQuantity = existingProductInCart.getQuantity();
 
-                    // Çıkarılacak miktar mevcut miktardan fazla mı kontrol et
                     if (quantity > currentQuantity) {
                         throw new IllegalArgumentException("Cannot remove more than available quantity in cart.");
                     }
 
-                    // Yeni miktarı hesapla
                     int newQuantity = currentQuantity - quantity;
 
-                    // Sepetteki ürün miktarı sıfırsa ürünü kaldır
                     if (newQuantity == 0) {
                         cart.getProducts().remove(existingProductInCart);
-                        existingProductInCart.setCart(null); // Customer cart değerini null yap
+                        existingProductInCart.setCart(null);
                     } else {
-                        // Miktarı güncelle
+
                         existingProductInCart.setQuantity(newQuantity);
                     }
 
-                    // Stok miktarını artır
                     product.setStock(product.getStock() + quantity);
 
-                    // Toplam fiyatı güncelle
                     double totalPrice = cart.getProducts().stream()
                             .mapToDouble(p -> p.getPrice() * p.getQuantity())
                             .sum();
                     cart.setTotalPrice(totalPrice);
 
-                    // Product içindeki quantity miktarını güncelle
-                    existingProductInCart.setQuantity(newQuantity); // Bu satırı ekleyin
+                    existingProductInCart.setQuantity(newQuantity);
 
-                    // Güncellemeleri kaydet
-                    productRepository.save(product); // Stok güncelleme
+                    productRepository.save(product);
                     if (newQuantity > 0) {
-                        productRepository.save(existingProductInCart); // Sadece miktar sıfır değilse mevcut ürünü güncelle
+                        productRepository.save(existingProductInCart);
                     }
                     return cartRepository.save(cart);
                 }
@@ -186,7 +184,7 @@
         @Override
         @Transactional
         public Cart increaseProductQuantity(Product product, int quantity, Cart cart) {
-            // Sepette ürünü bul
+
             Product existingProductInCart = null;
             for (Product p : cart.getProducts()) {
                 if (p.getId().equals(product.getId())) {
@@ -196,10 +194,9 @@
             }
 
             if (existingProductInCart != null) {
-                // Ürün zaten sepette mevcut, miktarı artır
+
                 int newQuantity = existingProductInCart.getQuantity() + quantity;
 
-                // Stok kontrolü
                 if (quantity > product.getStock()) {
                     throw new IllegalArgumentException("Requested quantity exceeds available stock.");
                 }
@@ -207,18 +204,15 @@
                 existingProductInCart.setQuantity(newQuantity);
                 existingProductInCart.setStock(product.getStock() - quantity);
             } else {
-                // Ürün sepette yok, sepete ekle
-                product.setQuantity(quantity); // İlk miktarı ayarla
+                product.setQuantity(quantity);
                 cart.getProducts().add(product);
             }
 
-            // Toplam fiyatı güncelle
             double totalPrice = cart.getProducts().stream()
                     .mapToDouble(p -> p.getPrice() * p.getQuantity())
                     .sum();
             cart.setTotalPrice(totalPrice);
 
-            // Güncellemeleri kaydet
             return cartRepository.save(cart);
         }
 
@@ -226,8 +220,6 @@
         @Transactional
         public Cart decreaseProductQuantity(Product product, int quantity, Cart cart) {
 
-
-            // Sepette ürünü buluyoruz
             Product existingProductInCart = null;
             for (Product p : cart.getProducts()) {
                 if (p.getId().equals(product.getId())) {
@@ -238,55 +230,75 @@
 
             if (existingProductInCart != null) {
 
-
-                // Mevcut ürün miktarını kontrol ediyoruz
-
                 int currentQuantity = existingProductInCart.getQuantity();
 
-                // Çıkarılacak miktar mevcut miktardan fazla mı onu kontrol ediyoruz.
 
                 if (quantity > currentQuantity) {
                     throw new IllegalArgumentException("Cannot remove more than available quantity in cart.");
                 }
 
-                // Yeni miktarı hesapla
                 int newQuantity = currentQuantity - quantity;
 
-                // Stok miktarını artır
                 product.setStock(product.getStock() + quantity);
                 product.setQuantity(newQuantity);
 
-                // Sepetteki ürün miktarı sıfırsa ürünü kaldır
                 if (newQuantity <= 0) {
                     cart.getProducts().remove(existingProductInCart);
-                    existingProductInCart.setCart(null); // Ürün sepet referansını kaldır
+                    existingProductInCart.setCart(null);
                 } else {
-                    // Miktarı güncelle
                     existingProductInCart.setQuantity(newQuantity);
                 }
 
-                // Toplam fiyatı güncelle
                 double totalPrice = cart.getProducts().stream()
                         .mapToDouble(p -> p.getPrice() * p.getQuantity())
                         .sum();
                 cart.setTotalPrice(totalPrice);
 
-                // Güncellemeleri kaydet
-                productRepository.save(product); // Ürünü güncelle
-                return cartRepository.save(cart); // Sepeti güncelle
+                productRepository.save(product);
+                return cartRepository.save(cart);
             }
 
-            return null; // Ürün sepet bulunamadıysa null döner
+            return null;
         }
 
 
 
         @Override
-        public Cart cartToOrder(Cart cart, Order order) {
-            order.setOrderDetails(cart.getOrders());
-            order.setCustomer(cart.getCustomer());
-            cartRepository.delete(cart);
-            return cart;
+        @Transactional
+        public Order cartToOrder(Cart cart, String address) {
 
+            Order order = new Order();
+            order.setCustomer(cart.getCustomer());
+            order.setAddress(address);
+
+            List<OrderDetailHistory> orderDetailHistories = cart.getProducts().stream()
+                    .map(product -> {
+                        OrderDetailHistory history = new OrderDetailHistory();
+                        history.setOrder(order);
+                        history.setProduct(product);
+                        history.setPriceAtPurchase(product.getPrice());
+                        history.setQuantity(product.getQuantity());
+                        history.setTotalPrice(product.getPrice() * product.getQuantity());
+                        return history;
+                    })
+                    .collect(Collectors.toList());
+
+            order.setOrderDetailHistories(orderDetailHistories);
+
+
+            orderRepository.save(order);
+
+
+            cart.getProducts().forEach(product -> product.setCart(null));
+            cart.getProducts().clear();
+
+
+            cart.setTotalPrice(0.0);
+            cart.setQuantity(0);
+
+            cartRepository.save(cart);
+
+            return order;
         }
+
     }
