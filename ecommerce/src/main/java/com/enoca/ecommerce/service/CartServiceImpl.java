@@ -284,6 +284,7 @@
                     .collect(Collectors.toList());
 
             order.setOrderDetailHistories(orderDetailHistories);
+            order.setTotalPrice(cart.getTotalPrice());
 
 
             orderRepository.save(order);

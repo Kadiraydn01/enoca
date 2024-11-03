@@ -8,41 +8,43 @@ import java.util.List;
 
 @Service
 public class OrderServiceImpl implements OrderService{
+
+    private final OrderRepository orderRepository;
+
     @Autowired
-    OrderRepository orderRepository;
-    @Autowired
-    ProductService productService;
-
-
-
-        @Override
-        public List<Order> findAll () {
-            return orderRepository.findAll();
-        }
-        @Override
-        public Order findById (Long id){
-            return orderRepository.findById(id).orElse(null);
-        }
-        @Override
-        public Order deleteById (Long id){
-            Order order = orderRepository.findById(id).orElse(null);
-            if (order != null) {
-                orderRepository.deleteById(id);
-                return order;
-            } else {
-                return null;
-            }
-        }
-        @Override
-        public Order update (Order order){
-            return orderRepository.save(order);
-        }
-        @Override
-        public List<Order> findByUserId (Long userId){
-            return orderRepository.findByCustomerId(userId);
-        }
-
+    public OrderServiceImpl(OrderRepository orderRepository) {
+        this.orderRepository = orderRepository;
 
     }
+
+    @Override
+    public List<Order> findAll () {
+        return orderRepository.findAll();
+    }
+    @Override
+    public Order findById (Long id){
+        return orderRepository.findById(id).orElse(null);
+    }
+    @Override
+    public Order deleteById (Long id){
+        Order order = orderRepository.findById(id).orElse(null);
+        if (order != null) {
+            orderRepository.deleteById(id);
+            return order;
+        } else {
+            return null;
+        }
+    }
+    @Override
+    public Order update (Order order){
+        return orderRepository.save(order);
+    }
+    @Override
+    public List<Order> findByUserId (Long userId){
+        return orderRepository.findByCustomerId(userId);
+    }
+
+
+}
     
 

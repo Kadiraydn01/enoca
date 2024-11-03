@@ -24,6 +24,9 @@ public class Order {
     @Column(name = "address")
     private String address;
 
+    @Column(name = "total_price")
+    private Double totalPrice;
+
 
     @ManyToOne(cascade ={CascadeType.DETACH, CascadeType.MERGE,CascadeType.PERSIST,CascadeType.REFRESH})
     @JoinColumn(name = "customer_id")
