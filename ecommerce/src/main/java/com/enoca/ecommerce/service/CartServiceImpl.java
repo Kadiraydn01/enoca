@@ -51,6 +51,7 @@
             }
 
             cart.setProducts(products);
+            cart.setQuantity(0);
 
             cart.setCustomer(customer);
 
@@ -168,45 +169,50 @@
         @Override
         @Transactional
         public Cart removeProductFromCart(Product product, int quantity, Cart cart) {
-                if(quantity <= 0){
-                    throw new IllegalArgumentException("Quantity must be greater than 0.");
-                }
+            if (quantity <= 0) {
+                throw new IllegalArgumentException("Quantity must be greater than 0.");
+            }
+
             product = productRepository.findById(product.getId()).orElse(null);
             if (product != null) {
                 Product existingProductInCart = null;
+
                 for (Product p : cart.getProducts()) {
                     if (p.getId().equals(product.getId())) {
                         existingProductInCart = p;
                         break;
                     }
                 }
-                if (existingProductInCart != null) {
 
+                if (existingProductInCart != null) {
                     int currentQuantity = existingProductInCart.getQuantity();
 
                     if (quantity > currentQuantity) {
                         throw new IllegalArgumentException("Cannot remove more than available quantity in cart.");
                     }
 
+                    // Yeni miktarı hesaplayın
                     int newQuantity = currentQuantity - quantity;
+                    existingProductInCart.setQuantity(newQuantity);
 
                     if (newQuantity == 0) {
                         cart.getProducts().remove(existingProductInCart);
-                        cart.setQuantity(0);
                         existingProductInCart.setCart(null);
-                    } else {
-
-                        existingProductInCart.setQuantity(newQuantity);
                     }
 
+                    // Stok güncellemesi
                     product.setStock(product.getStock() + quantity);
 
+                    // Toplam fiyat ve sepet miktarını güncelleyin
                     double totalPrice = cart.getProducts().stream()
                             .mapToDouble(p -> p.getPrice() * p.getQuantity())
                             .sum();
                     cart.setTotalPrice(totalPrice);
 
-                    existingProductInCart.setQuantity(newQuantity);
+                    int totalCartQuantity = cart.getProducts().stream()
+                            .mapToInt(Product::getQuantity)
+                            .sum();
+                    cart.setQuantity(totalCartQuantity);
 
                     productRepository.save(product);
                     if (newQuantity > 0) {
@@ -217,6 +223,7 @@
             }
             return null;
         }
+
 
 
         @Override

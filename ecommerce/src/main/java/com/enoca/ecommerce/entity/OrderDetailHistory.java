@@ -4,17 +4,17 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Data
+@EqualsAndHashCode(callSuper = true)
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "order_detail_history", schema = "enoca")
-public class OrderDetailHistory {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+public class OrderDetailHistory extends BaseEntity {
+
 
     @ManyToOne
     @JoinColumn(name = "order_id")
