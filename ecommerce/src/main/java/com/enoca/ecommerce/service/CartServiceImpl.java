@@ -191,7 +191,6 @@
                         throw new IllegalArgumentException("Cannot remove more than available quantity in cart.");
                     }
 
-                    // Yeni miktarı hesaplayın
                     int newQuantity = currentQuantity - quantity;
                     existingProductInCart.setQuantity(newQuantity);
 
@@ -200,10 +199,8 @@
                         existingProductInCart.setCart(null);
                     }
 
-                    // Stok güncellemesi
                     product.setStock(product.getStock() + quantity);
 
-                    // Toplam fiyat ve sepet miktarını güncelleyin
                     double totalPrice = cart.getProducts().stream()
                             .mapToDouble(p -> p.getPrice() * p.getQuantity())
                             .sum();
