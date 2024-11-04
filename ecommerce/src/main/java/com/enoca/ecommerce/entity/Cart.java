@@ -21,7 +21,7 @@ public class Cart {
     private long id;
 
     @Column(name = "quantity")
-    private int quantity;
+    private Integer quantity;
 
     @Column(name = "total_price")
     private Double totalPrice = 0.0;

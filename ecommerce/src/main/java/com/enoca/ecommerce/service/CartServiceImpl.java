@@ -1,11 +1,14 @@
     package com.enoca.ecommerce.service;
 
     import com.enoca.ecommerce.entity.*;
+    import com.enoca.ecommerce.exceptions.OrderException;
     import com.enoca.ecommerce.repository.CartRepository;
     import com.enoca.ecommerce.repository.OrderRepository;
     import com.enoca.ecommerce.repository.ProductRepository;
     import jakarta.transaction.Transactional;
     import org.springframework.beans.factory.annotation.Autowired;
+    import org.springframework.boot.context.config.ConfigDataResourceNotFoundException;
+    import org.springframework.http.HttpStatus;
     import org.springframework.stereotype.Service;
 
     import java.util.ArrayList;
@@ -38,7 +41,7 @@
         public Cart createCart(Cart cart, Customer customer) {
 
             List<Product> products = new ArrayList<>();
-            long totalPrice = 0;
+            double totalPrice = 0;
             for (Product product : cart.getProducts()) {
                 Product existingProduct = productService.getProduct(product.getId());
                 if (existingProduct != null) {
@@ -62,33 +65,42 @@
 
         @Override
         public Cart updateCart(Cart cart) {
-            return cartRepository.save(cart);
+            Cart existingCart = cartRepository.findById(cart.getId())
+                    .orElseThrow(() -> new OrderException("Cart not found.", HttpStatus.BAD_REQUEST));
+
+            if (cart.getQuantity() != null && !cart.getQuantity().equals(existingCart.getQuantity())) {
+                existingCart.setQuantity(cart.getQuantity());
+            }
+            if (cart.getTotalPrice() != null && !cart.getTotalPrice().equals(existingCart.getTotalPrice())) {
+                existingCart.setTotalPrice(cart.getTotalPrice());
+            }
+
+            if (cart.getProducts() != null && !cart.getProducts().equals(existingCart.getProducts())) {
+                existingCart.setProducts(cart.getProducts());
+            }
+
+            return cartRepository.save(existingCart);
         }
+
 
         @Override
         public Cart clearCart(long id) {
             Cart cart = getCart(id);
             if (cart != null) {
-                // Break the association and adjust quantity and stock for each product
                 cart.getProducts().forEach(product -> {
-                    // Increase stock by the quantity in the cart
                     int quantityInCart = product.getQuantity();
                     product.setStock(product.getStock() + quantityInCart);
 
-                    // Set quantity to 0 for this product in the cart
                     product.setQuantity(0);
 
-                    // Remove the association with the cart and save the product
                     product.setCart(null);
                     productRepository.save(product);
                 });
 
-                // Clear the cart's products list and reset cart totals
                 cart.getProducts().clear();
                 cart.setTotalPrice(0.0);
                 cart.setQuantity(0);
 
-                // Save the updated cart
                 cartRepository.save(cart);
             }
             return cart;
@@ -180,6 +192,7 @@
 
                     if (newQuantity == 0) {
                         cart.getProducts().remove(existingProductInCart);
+                        cart.setQuantity(0);
                         existingProductInCart.setCart(null);
                     } else {
 
@@ -313,10 +326,8 @@
 
             orderRepository.save(order);
 
-            // Make a copy of products in the cart to update quantities later
             List<Product> productsToUpdate = new ArrayList<>(cart.getProducts());
 
-            // Clear cart details after order creation
             cart.getProducts().forEach(product -> product.setCart(null));
             cart.getProducts().clear();
             cart.setTotalPrice(0.0);
@@ -324,7 +335,6 @@
 
             cartRepository.save(cart);
 
-            // Set each product's quantity to 0 after clearing the cart
             productsToUpdate.forEach(product -> {
                 product.setQuantity(0);
                 productRepository.save(product);

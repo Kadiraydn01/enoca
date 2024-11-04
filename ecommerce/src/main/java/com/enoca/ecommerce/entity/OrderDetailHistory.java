@@ -26,11 +26,11 @@ public class OrderDetailHistory {
     private Product product;
 
     @Column(name = "price_at_purchase")
-    private Double priceAtPurchase;  // Satın alınan andaki fiyat
+    private Double priceAtPurchase;
 
     @Column(name = "quantity")
-    private int quantity;  // Satın alınan miktar
+    private int quantity;
 
     @Column(name = "total_price")
-    private Double totalPrice;  // quantity * priceAtPurchase olarak hesaplanır
+    private Double totalPrice;
 }
